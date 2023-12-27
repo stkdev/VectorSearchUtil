@@ -1,0 +1,16 @@
+[project]
+name = "VectorSearchUtil"
+version = "0.01"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+
+dependencies = [
+    "transformers==4.36.2",
+    "sqlite-vss==0.1.2",
+    "open_clip_torch==2.23.0",
+    "pandas",
+    "scikit-learn"
+]
+
+#[project.optional-dependencies]
+#dev = []
