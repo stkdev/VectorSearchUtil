@@ -5,9 +5,9 @@ import open_clip
 from VectorSearchBase import VectorSearchBase
 
 
-class ImageVectorSearchUtil(VectorSearchBase):
+class VSU_Image_CLIP(VectorSearchBase):
     def __init__(self, db_name=':memory:'):
-        super(ImageVectorSearchUtil, self).__init__(db_name)
+        super(VSU_Image_CLIP, self).__init__(db_name)
 
 
     # override

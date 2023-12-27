@@ -5,9 +5,9 @@ from transformers import AutoTokenizer, AutoModel
 from VectorSearchBase import VectorSearchBase
 
 
-class VectorSearchUtil(VectorSearchBase):
+class VSU_Text_E5(VectorSearchBase):
     def __init__(self, db_name=':memory:'):
-        super(VectorSearchUtil, self).__init__(db_name)
+        super(VSU_Text_E5, self).__init__(db_name)
 
 
     # override
