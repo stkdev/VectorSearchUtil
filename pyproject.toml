@@ -14,3 +14,16 @@ dependencies = [
 
 #[project.optional-dependencies]
 #dev = []
+
+
+[tool.setuptools]
+# ...
+# By default, include-package-data is true in pyproject.toml, so you do
+# NOT have to specify this line.
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["vsu"]
+
+[tool.setuptools.package-data]
+sample = ["*.csv", "img/*.png"]
