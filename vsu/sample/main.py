@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 
 from vsu.text import VSU_Text_E5
@@ -5,11 +6,13 @@ from vsu.image import VSU_Image_CLIP, VSU_Image_EfficientNet
 
 
 def get_sample_text():
-    return pd.read_csv("sample_text.csv")
+    return pd.read_csv(os.path.join(os.path.dirname(__file__), "sample_text.csv"))
 
 
 def get_sample_image_list():
-    return pd.read_csv("sample_img.csv")
+    df = pd.read_csv(os.path.join(os.path.dirname(__file__), "sample_img.csv"))
+    df["画像パス"] = df["画像パス"].apply(lambda r:os.path.join(os.path.dirname(__file__), r))
+    return df
 
 
 def sample1_1_simple(df):
@@ -90,8 +93,7 @@ def sample3_1_simple(df):
     print(vsu.query_with_info(q))
 
 
-if __name__ == '__main__':
-
+def check():
     # 入力データの仕様
     # 対象列を target、情報として保持しておきたい列を　option1~5 という名前にする
     df = get_sample_text()
@@ -107,4 +109,9 @@ if __name__ == '__main__':
     # sample2_2_zeroshot(df_img)
 
     sample3_1_simple(df_img)
+
+
+if __name__ == '__main__':
+    check()
+
 
