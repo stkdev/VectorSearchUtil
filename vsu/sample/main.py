@@ -4,6 +4,14 @@ from vsu.text import VSU_Text_E5
 from vsu.image import VSU_Image_CLIP, VSU_Image_EfficientNet
 
 
+def get_sample_text():
+    return pd.read_csv("sample_text.csv")
+
+
+def get_sample_image_list():
+    return pd.read_csv("sample_img.csv")
+
+
 def sample1_1_simple(df):
     """
     オンメモリDBに格納
@@ -48,7 +56,8 @@ def sample2_1_simple(df):
     vsu = VSU_Image_CLIP()
     vsu.set_data(df)
 
-    print(vsu.query_with_info("img/Refiner_02326_.png"))
+    q = get_sample_image_list()["画像パス"][0]
+    print(vsu.query_with_info(q))
 
 
 def sample2_2_zeroshot(df):
@@ -77,17 +86,18 @@ def sample3_1_simple(df):
     vsu = VSU_Image_EfficientNet()
     vsu.set_data(df)
 
-    print(vsu.query_with_info("img/Refiner_02326_.png"))
+    q = get_sample_image_list()["画像パス"][0]
+    print(vsu.query_with_info(q))
 
 
 if __name__ == '__main__':
 
     # 入力データの仕様
     # 対象列を target、情報として保持しておきたい列を　option1~5 という名前にする
-    df = pd.read_csv("sample_text.csv")
+    df = get_sample_text()
     df = df.rename(columns={"タイトル": "target", "作者": "option1"})
 
-    df_img = pd.read_csv("sample_img.csv")
+    df_img = get_sample_image_list()
     df_img = df_img.rename(columns={"画像パス": "target"})
 
     sample1_1_simple(df)
