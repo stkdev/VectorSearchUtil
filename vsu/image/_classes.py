@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModel, AutoImageProcessor, EfficientNetModel
+from transformers import AutoImageProcessor, EfficientNetModel
 
 import torch
 from PIL import Image
@@ -11,13 +11,11 @@ class VSU_Image_CLIP(VectorSearchBase):
     def __init__(self, db_name=':memory:'):
         super(VSU_Image_CLIP, self).__init__(db_name)
 
-
     # override
     def init_model(self):
         self.tokenizer = open_clip.get_tokenizer('ViT-B-32')
         self.model, _, self.preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained='laion2b_s34b_b79k')
         self.vec_size = self.model.token_embedding.embedding_dim
-
 
     # override
     def do_zeroshot(self):
@@ -37,7 +35,6 @@ class VSU_Image_CLIP(VectorSearchBase):
         self.data["zeroshot_pred"] = pred
         return scores, pred
 
-
     # override
     def _trans_vec_main_func(self, ar):
         imgs = [Image.open(p) for p in ar]
@@ -46,10 +43,7 @@ class VSU_Image_CLIP(VectorSearchBase):
         image_features = [vec / vec.norm(dim=-1, keepdim=True) for vec in image_features]
         image_features = [vec.tolist()[0] for vec in image_features]
 
-        # image_features if type(image_features) == type([]) else
-        tmp = image_features
         return image_features
-
 
     # override
     def _trans_vec_sub_func(self, ar):
@@ -61,11 +55,9 @@ class VSU_Image_CLIP(VectorSearchBase):
         return v
 
 
-
 class VSU_Image_EfficientNet(VectorSearchBase):
     def __init__(self, db_name=':memory:'):
         super(VSU_Image_EfficientNet, self).__init__(db_name)
-
 
     # override
     def init_model(self):
@@ -76,7 +68,6 @@ class VSU_Image_EfficientNet(VectorSearchBase):
     # override
     def do_zeroshot(self):
         return
-
 
     # override
     def _trans_vec_main_func(self, ar):
@@ -94,11 +85,10 @@ class VSU_Image_EfficientNet(VectorSearchBase):
             for inputs in images:
                 outputs = self.model(**inputs)
                 last_hidden_states = outputs.last_hidden_state
-                image_features.append(last_hidden_states.mean(dim=[0,2,3]).tolist())
+                image_features.append(last_hidden_states.mean(dim=[0, 2, 3]).tolist())
 
         # image_features if type(image_features) == type([]) else
         return image_features
-
 
     # override
     # def _trans_vec_sub_func(self, ar):
@@ -108,4 +98,3 @@ class VSU_Image_EfficientNet(VectorSearchBase):
 
     #   v = text_features.tolist()
     #   return v
-

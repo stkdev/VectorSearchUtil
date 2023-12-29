@@ -12,7 +12,6 @@ class VSU_Text_E5(VectorSearchBase):
     def __init__(self, db_name=':memory:'):
         super(VSU_Text_E5, self).__init__(db_name)
 
-
     # override
     def init_model(self):
         model_name = 'intfloat/multilingual-e5-small'
@@ -22,11 +21,9 @@ class VSU_Text_E5(VectorSearchBase):
 
         self.vec_size = self.model.embeddings.word_embeddings.embedding_dim
 
-
     def __average_pool(self, last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
         last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
         return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
-
 
     # override
     def do_zeroshot(self):
@@ -46,7 +43,6 @@ class VSU_Text_E5(VectorSearchBase):
         self.data["zeroshot_pred"] = pred
         return scores, pred
 
-
     # override
     def _trans_vec_main_func(self, ar):
         ar = ['query: '+a for a in ar]
@@ -58,14 +54,11 @@ class VSU_Text_E5(VectorSearchBase):
 
         return features
 
-
     # override
     def _trans_vec_sub_func(self, ar):
         return self._trans_vec_main_func(ar)
-
 
     # override
     def query(self, q, k=5):
         q = 'query: '+q
         return super().query(q, k)
-

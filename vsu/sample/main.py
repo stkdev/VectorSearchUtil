@@ -11,7 +11,7 @@ def get_sample_text():
 
 def get_sample_image_list():
     df = pd.read_csv(os.path.join(os.path.dirname(__file__), "sample_img.csv"))
-    df["画像パス"] = df["画像パス"].apply(lambda r:os.path.join(os.path.dirname(__file__), r))
+    df["画像パス"] = df["画像パス"].apply(lambda r: os.path.join(os.path.dirname(__file__), r))
     return df
 
 
@@ -23,7 +23,9 @@ def sample1_1_simple(df):
     vsu = VSU_Text_E5()
     vsu.set_data(df)
 
-    print(vsu.query_with_info("ハトの生態"))
+    q = "ハトの生態"
+    print(f'テキストの近傍探索。クエリ：{q}')
+    print(vsu.query_with_info(q))
 
 
 def sample1_2_add(df):
@@ -34,8 +36,8 @@ def sample1_2_add(df):
     　
     """
     vsu = VSU_Text_E5()
-    df_1 = df.head(15) # 0~14番目
-    df_2 = df.tail(n=20) # 5~24番目
+    df_1 = df.head(15)  # 0~14番目
+    df_2 = df.tail(n=20)  # 5~24番目
 
     # まずdf_2だけ入る
     vsu.set_data(df_2)
@@ -47,7 +49,9 @@ def sample1_2_add(df):
     # append=True にすると追記モードとなる
     # データが重複している5~14番目のデータは二重登録されない
     vsu.set_data(df_2, append=True)
-    print(vsu.query_with_info("ハトの生態"))
+    q = "ハトの生態"
+    print(f'データの追加後、テキストの近傍探索。クエリ：{q}')
+    print(vsu.query_with_info(q))
 
 
 def sample2_1_simple(df):
@@ -60,6 +64,7 @@ def sample2_1_simple(df):
     vsu.set_data(df)
 
     q = get_sample_image_list()["画像パス"][0]
+    print(f'画像の近傍探索(CLIP)。クエリ：{q}')
     print(vsu.query_with_info(q))
 
 
@@ -74,9 +79,11 @@ def sample2_2_zeroshot(df):
     vsu = VSU_Image_CLIP()
     vsu.set_data(df)
 
-    vsu.set_zeroshot_labels(["a cat", "a dog"])
+    labels = ["a cat", "a dog"]
+    vsu.set_zeroshot_labels(labels)
     scores, pred = vsu.do_zeroshot()
 
+    print(f'画像のゼロショット分類。分類キー：{labels}')
     print(pd.DataFrame({"target": vsu.data["target"], "pred": pred}))
 
 
@@ -90,6 +97,7 @@ def sample3_1_simple(df):
     vsu.set_data(df)
 
     q = get_sample_image_list()["画像パス"][0]
+    print(f'画像の近傍探索(EfficientNet)。クエリ：{q}')
     print(vsu.query_with_info(q))
 
 
@@ -103,15 +111,13 @@ def check():
     df_img = df_img.rename(columns={"画像パス": "target"})
 
     sample1_1_simple(df)
-    # sample1_2_add(df)
+    sample1_2_add(df)
 
     sample2_1_simple(df_img)
-    # sample2_2_zeroshot(df_img)
+    sample2_2_zeroshot(df_img)
 
     sample3_1_simple(df_img)
 
 
 if __name__ == '__main__':
     check()
-
-

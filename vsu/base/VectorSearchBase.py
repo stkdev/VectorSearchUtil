@@ -18,7 +18,7 @@ class VectorSearchBase:
     def __init__(self, db_name=':memory:'):
 
         self.data = None
-        self.save_columns = ["target","option1","option2","option3","option4","option5"]
+        self.save_columns = ["target", "option1", "option2", "option3", "option4","option5"]
 
         self.zeroshot_labels = None
         self.zeroshot_vec = None
@@ -31,7 +31,6 @@ class VectorSearchBase:
         self.init_model()
         self.init_db()
 
-
     # override
     def init_model(self):
         self.tokenizer = None
@@ -39,7 +38,6 @@ class VectorSearchBase:
         self.preprocess = None
 
         self.vec_size = None
-
 
     def init_db(self):
         vec_size = self.vec_size
@@ -63,7 +61,6 @@ class VectorSearchBase:
         if self.data is None:
             self.__set_data4db()
 
-
     def __set_data4db(self):
         sql = f"""
         select %s from data;
@@ -74,16 +71,14 @@ class VectorSearchBase:
             self.data = tmp
         return
 
-
     def __serialize(self, vector: List[float]) -> bytes:
         return np.asarray(vector).astype(np.float32).tobytes()
-
 
     def insert_data(self, row):
         with self.db:
             target_data = self.db.execute('''
         select * from data where target = ?
-      ''',(row["target"],)).fetchone()
+      ''', (row["target"],)).fetchone()
 
             if target_data is None:
                 self.db.execute(f'''
@@ -98,15 +93,12 @@ class VectorSearchBase:
             VALUES (?, ?)
         ''', (last_id, self.__serialize(row["vector"])))
 
-
     def reset_db(self):
         self.db.execute("DROP TABLE data;")
         self.db.execute("DROP TABLE vss;")
         self.data = None
 
-
     def set_data(self, data, append=False):
-
         data = data.copy()
 
         if 'target' not in data.columns:
@@ -117,7 +109,6 @@ class VectorSearchBase:
         elif self.data is not None:
             self.reset_db()
             self.init_db()
-
 
         data["label"] = data["target"].tolist()
 
@@ -134,13 +125,12 @@ class VectorSearchBase:
         else:
             self.data = data[self.save_columns+["vector"]]
 
-        for i,row in data.iterrows():
+        for i, row in data.iterrows():
             self.insert_data(row)
 
         self.__set_data4db()
 
         return
-
 
     def set_zeroshot_labels(self, arr):
         self.zeroshot_labels = arr
@@ -148,11 +138,9 @@ class VectorSearchBase:
 
         return
 
-
     # override
     def do_zeroshot(self):
         pass
-
 
     # override
     def _trans_vec_main_func(self, ar):
@@ -162,16 +150,15 @@ class VectorSearchBase:
     def _trans_vec_sub_func(self, ar):
         pass
 
-
     def __trans_vec_main(self, ary, sp=10, verbose=False):
 
         l_max = len(ary)
         ret = []
-        for i in range(0,(1+l_max // sp)):
+        for i in range(0, (1+l_max // sp)):
             if i*sp == l_max:
                 break
 
-            ar = ary[(i*sp):(min(sp*(i+1),l_max))]
+            ar = ary[(i*sp):(min(sp*(i+1), l_max))]
             features = self._trans_vec_main_func(ar)
 
             ret.extend(features)
@@ -182,18 +169,17 @@ class VectorSearchBase:
 
         return ret
 
-
     def __trans_vec_sub(self, ary, sp=10, verbose=False):
         """
 
         """
         l_max = len(ary)
         ret = []
-        for i in range(0,(1+l_max // sp)):
+        for i in range(0, (1+l_max // sp)):
             if i*sp == l_max:
                 break
 
-            ar = ary[(i*sp):(min(sp*(i+1),l_max))]
+            ar = ary[(i*sp):(min(sp*(i+1), l_max))]
 
             v = self._trans_vec_sub_func(ar)
             ret.extend(v)
@@ -203,7 +189,6 @@ class VectorSearchBase:
             print("complete")
 
         return ret
-
 
     def __search_similar_embeddings(self, query_embedding, k=5):
         results = self.db.execute(f'''
@@ -216,11 +201,9 @@ class VectorSearchBase:
     ''', (self.__serialize(query_embedding), k, k))
         return results.fetchall()
 
-
     def __q(self, q):
         embeddings = self.__trans_vec_main([q], sp=10)
         return embeddings[0]
-
 
     def query(self, query, k=5):
         if self.data is None or self.data.shape[0] == 0:
@@ -229,11 +212,9 @@ class VectorSearchBase:
         qry = self.__q(query)
         return self.__search_similar_embeddings(qry, k=k)
 
-
     def query_with_info(self, query, k=5):
-        result = self.query(query,k=k)
+        result = self.query(query, k=k)
         return pd.DataFrame(result, columns=["id"]+self.save_columns+["distance"]).dropna(how='all', axis=1)
-
 
     def MLP_Classifier(self, y_label, skip_build=False, hidden_layer_sizes=(100,)):
         if self.data is None:
@@ -251,7 +232,6 @@ class VectorSearchBase:
 
         print("score:", clf.score(X_test, y_test))
         return clf.predict(X), clf.predict_proba(X)
-
 
     def MLP_Regressor(self, y_label, skip_build=False, hidden_layer_sizes=(100,)):
         if self.data is None:
