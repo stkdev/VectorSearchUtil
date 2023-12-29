@@ -11,7 +11,7 @@ def get_sample_text():
 
 def get_sample_image_list():
     df = pd.read_csv(os.path.join(os.path.dirname(__file__), "sample_img.csv"))
-    # df["画像パス"] = df["画像パス"].apply(lambda r:os.path.join(os.path.dirname(__file__), r))
+    df["画像パス"] = df["画像パス"].apply(lambda r:os.path.join(os.path.dirname(__file__), r))
     return df
 
 
