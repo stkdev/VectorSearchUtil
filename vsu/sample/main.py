@@ -1,8 +1,7 @@
-from VSU_Image_CLIP import VSU_Image_CLIP
-from VSU_Image_EfficientNet import VSU_Image_EfficientNet
-from VSU_Text_E5 import VSU_Text_E5
-
 import pandas as pd
+
+from vsu.text import VSU_Text_E5
+from vsu.image import VSU_Image_CLIP, VSU_Image_EfficientNet
 
 
 def sample1_1_simple(df):
@@ -69,6 +68,17 @@ def sample2_2_zeroshot(df):
     print(pd.DataFrame({"target": vsu.data["target"], "pred": pred}))
 
 
+def sample3_1_simple(df):
+    """
+    オンメモリDBに格納
+    画像パスを入力しベクトル化して保持
+    現在は検索の場合も画像パスを指定するよう設計している
+    """
+    vsu = VSU_Image_EfficientNet()
+    vsu.set_data(df)
+
+    print(vsu.query_with_info("img/Refiner_02326_.png"))
+
 
 if __name__ == '__main__':
 
@@ -83,6 +93,8 @@ if __name__ == '__main__':
     sample1_1_simple(df)
     # sample1_2_add(df)
 
-    # sample2_1_simple(df_img)
+    sample2_1_simple(df_img)
     # sample2_2_zeroshot(df_img)
+
+    sample3_1_simple(df_img)
 

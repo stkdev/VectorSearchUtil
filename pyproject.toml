@@ -1,5 +1,5 @@
 [project]
-name = "VectorSearchUtil"
+name = "vec_search_util"
 version = "0.01"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}

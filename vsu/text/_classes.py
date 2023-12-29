@@ -2,7 +2,10 @@ import torch.nn.functional as F
 from torch import Tensor
 from transformers import AutoTokenizer, AutoModel
 
-from VectorSearchBase import VectorSearchBase
+import pandas as pd
+import numpy as np
+
+from vsu.base.VectorSearchBase import VectorSearchBase
 
 
 class VSU_Text_E5(VectorSearchBase):
