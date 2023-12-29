@@ -1,0 +1,2 @@
+include vsu/sample/*.csv
+include vsu/sample/img/*.png

@@ -22,8 +22,8 @@ dependencies = [
 # NOT have to specify this line.
 include-package-data = true
 
-#[tool.setuptools.packages.find]
-#where = ["vsu"]
+[tool.setuptools.packages.find]
+where = ["vsu"]
 
-[tool.setuptools.package-data]
-sample = ["*.csv", "img/*.png"]
+#[tool.setuptools.package-data]
+#sample = ["*.csv", "img/*.png"]
