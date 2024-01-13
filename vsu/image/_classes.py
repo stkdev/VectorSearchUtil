@@ -37,7 +37,7 @@ class VSU_Image_CLIP(VectorSearchBase):
 
     # override
     def _trans_vec_main_func(self, ar):
-        imgs = [Image.open(p) for p in ar]
+        imgs = [Image.open(p) if type(p)==str else p for p in ar]
         images = [self.preprocess(img).unsqueeze(0) for img in imgs]
         image_features = [self.model.encode_image(image) for image in images]
         image_features = [vec / vec.norm(dim=-1, keepdim=True) for vec in image_features]
@@ -71,7 +71,7 @@ class VSU_Image_EfficientNet(VectorSearchBase):
 
     # override
     def _trans_vec_main_func(self, ar):
-        imgs = [Image.open(p) for p in ar]
+        imgs = [Image.open(p) if type(p)==str else p for p in ar]
 
         images = []
         for img in imgs:

@@ -98,7 +98,7 @@ class VectorSearchBase:
         self.db.execute("DROP TABLE vss;")
         self.data = None
 
-    def set_data(self, data, append=False):
+    def set_data(self, data, append=False, sp=10):
         data = data.copy()
 
         if 'target' not in data.columns:
@@ -113,7 +113,7 @@ class VectorSearchBase:
         data["label"] = data["target"].tolist()
 
         if "vector" not in data.columns:
-            data["vector"] = self.__trans_vec_main(data["label"].to_list(), sp=10, verbose=True)
+            data["vector"] = self.__trans_vec_main(data["label"].to_list(), sp=sp, verbose=True)
             print("add vector")
 
         for c in self.save_columns:
