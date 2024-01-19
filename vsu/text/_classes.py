@@ -45,7 +45,9 @@ class VSU_Text_E5(VectorSearchBase):
 
     # override
     def _trans_vec_main_func(self, ar):
-        ar = ['query: '+a for a in ar]
+        prefix = self.config.get('query_prefix', '')
+
+        ar = [a for a in ar]
         batch_dict = self.tokenizer(ar, max_length=512, padding=True, truncation=True, return_tensors='pt')
         outputs = self.model(**batch_dict)
         embeddings = self.__average_pool(outputs.last_hidden_state, batch_dict['attention_mask'])

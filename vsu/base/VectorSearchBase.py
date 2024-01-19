@@ -26,10 +26,18 @@ class VectorSearchBase:
         self.db = sqlite3.connect(db_name, detect_types=sqlite3.PARSE_DECLTYPES)
         self.db.enable_load_extension(True)
 
+        self.config = {}
+
         sqlite_vss.load(self.db)
 
+        self.set_config()
         self.init_model()
         self.init_db()
+
+
+    def set_config(self, **kwargs):
+        self.config = kwargs
+        return
 
     # override
     def init_model(self):
@@ -45,6 +53,7 @@ class VectorSearchBase:
         sql = """
         create table if not exists data (
           id integer primary key,
+          pk text,
           %s,
           vector List
         );
@@ -64,9 +73,9 @@ class VectorSearchBase:
     def __set_data4db(self):
         sql = f"""
         select %s from data;
-        """ % (",".join(["data."+c for c in self.save_columns+["vector"]]),)
+        """ % (",".join(["data."+c for c in ["pk"]+self.save_columns+["vector"]]),)
 
-        tmp = pd.DataFrame(self.db.execute(sql).fetchall(), columns=self.save_columns+["vector"])
+        tmp = pd.DataFrame(self.db.execute(sql).fetchall(), columns=["pk"]+self.save_columns+["vector"])
         if 0 < tmp.shape[0]:
             self.data = tmp
         return
@@ -77,14 +86,14 @@ class VectorSearchBase:
     def insert_data(self, row):
         with self.db:
             target_data = self.db.execute('''
-        select * from data where target = ?
-      ''', (row["target"],)).fetchone()
+        select * from data where pk = ?
+      ''', (row["pk"],)).fetchone()
 
             if target_data is None:
                 self.db.execute(f'''
-            INSERT INTO data({",".join(self.save_columns)},vector)
-            VALUES ({",".join(["?"]*(len(self.save_columns)+1))})
-        ''', tuple(row[self.save_columns+["vector"]]))
+            INSERT INTO data(pk,{",".join(self.save_columns)},vector)
+            VALUES ({",".join(["?"]*(len(self.save_columns)+2))})
+        ''', tuple(row[["pk"]+self.save_columns+["vector"]]))
 
                 last_id = self.db.execute('SELECT last_insert_rowid()').fetchone()[0]
 
@@ -110,7 +119,10 @@ class VectorSearchBase:
             self.reset_db()
             self.init_db()
 
-        data["label"] = data["target"].tolist()
+        prefix = self.config.get('query_prefix', '')
+
+        data["label"] = [prefix+t for t in data["target"].tolist()]
+        data["pk"] = data["label"]
 
         if "vector" not in data.columns:
             data["vector"] = self.__trans_vec_main(data["label"].to_list(), sp=sp, verbose=True)
@@ -121,9 +133,9 @@ class VectorSearchBase:
                 data[c] = None
 
         if append and self.data is not None:
-            self.data = pd.concat([self.data, data[self.save_columns+["vector"]]]).drop_duplicates(subset='target')
+            self.data = pd.concat([self.data, data[["pk"]+self.save_columns+["vector"]]]).drop_duplicates(subset='pk')
         else:
-            self.data = data[self.save_columns+["vector"]]
+            self.data = data[["pk"]+self.save_columns+["vector"]]
 
         for i, row in data.iterrows():
             self.insert_data(row)
