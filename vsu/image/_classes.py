@@ -8,8 +8,8 @@ from vsu.base.VectorSearchBase import VectorSearchBase
 
 
 class VSU_Image_CLIP(VectorSearchBase):
-    def __init__(self, db_name=':memory:'):
-        super(VSU_Image_CLIP, self).__init__(db_name)
+    def __init__(self, save_name=None):
+        super(VSU_Image_CLIP, self).__init__(save_name)
 
     # override
     def init_model(self):
@@ -56,8 +56,8 @@ class VSU_Image_CLIP(VectorSearchBase):
 
 
 class VSU_Image_EfficientNet(VectorSearchBase):
-    def __init__(self, db_name=':memory:'):
-        super(VSU_Image_EfficientNet, self).__init__(db_name)
+    def __init__(self, save_name=None):
+        super(VSU_Image_EfficientNet, self).__init__(save_name)
 
     # override
     def init_model(self):

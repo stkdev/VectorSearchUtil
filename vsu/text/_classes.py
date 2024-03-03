@@ -9,8 +9,8 @@ from vsu.base.VectorSearchBase import VectorSearchBase
 
 
 class VSU_Text_E5(VectorSearchBase):
-    def __init__(self, db_name=':memory:'):
-        super(VSU_Text_E5, self).__init__(db_name)
+    def __init__(self, save_name=None):
+        super(VSU_Text_E5, self).__init__(save_name)
 
     # override
     def init_model(self):

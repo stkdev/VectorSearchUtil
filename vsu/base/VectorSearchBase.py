@@ -2,37 +2,62 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
 
+from sqlalchemy import create_engine
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.orm import Session
+
+from sqlalchemy import select
+
 import sqlite3
-import sqlite_vss
+# import sqlite_vss
 import pandas as pd
 import numpy as np
 from typing import List
 
+from vsu.base.Entity import Base
+from vsu.base.Entity import T_Info, T_Vector, J_InfoVector
 
-sqlite3.register_adapter(list, lambda l: ';'.join([str(i) for i in l]))
-sqlite3.register_converter('List', lambda s: [float(item) for item in s.split(bytes(b';'))])
+from voyager import Index, Space
+
+import os
+
+# sqlite3.register_adapter(list, lambda l: ';'.join([str(i) for i in l]))
+# sqlite3.register_converter('List', lambda s: [float(item) for item in s.split(bytes(b';'))])
 
 
 class VectorSearchBase:
 
-    def __init__(self, db_name=':memory:'):
+    def __init__(self, save_name=None):
 
         self.data = None
+        self.info = None
+        self.vector = None
         self.save_columns = ["target", "option1", "option2", "option3", "option4","option5"]
 
         self.zeroshot_labels = None
         self.zeroshot_vec = None
 
-        self.db = sqlite3.connect(db_name, detect_types=sqlite3.PARSE_DECLTYPES)
-        self.db.enable_load_extension(True)
+        self.Base = Base()
+        self.save_name = save_name
+        self.db_name = '' if save_name is None else f'/{save_name}.db'
+        self.voy_name = None if save_name is None else f'{save_name}.voy'
+
+        self.engine = create_engine(f'sqlite://{self.db_name}', echo=True)
+        self.session = Session(self.engine)
+
+        self.index = None
+
+        # self.db = sqlite3.connect(db_name, detect_types=sqlite3.PARSE_DECLTYPES)
+        # self.db.enable_load_extension(True)
 
         self.config = {}
 
-        sqlite_vss.load(self.db)
+        # sqlite_vss.load(self.db)
 
-        self.set_config()
+        # self.set_config()
         self.init_model()
         self.init_db()
+        self.init_voyager()
 
 
     def set_config(self, **kwargs):
@@ -47,41 +72,55 @@ class VectorSearchBase:
 
         self.vec_size = None
 
-    def init_db(self):
+    def init_db(self, drop:bool = False):
         vec_size = self.vec_size
 
-        sql = """
-        create table if not exists data (
-          id integer primary key,
-          pk text,
-          %s,
-          vector List
-        );
-        """ % (",".join([" ".join([c, "text"]) for c in self.save_columns]),)
-        self.db.execute(sql)
+        if drop:
+            self.Base.metadata.drop_all(self.engine)
 
-        sql = f"""
-        CREATE VIRTUAL TABLE if not exists vss USING vss0 (
-            vector({vec_size})
-        );
-        """
-        self.db.execute(sql)
+        if False:
+            self.Base = automap_base()
+            self.Base.prepare(self.engine, reflect=True)
 
-        if self.data is None:
-            self.__set_data4db()
+        self.Base.metadata.create_all(self.engine)
+
+        self.__set_data4db()
+        # self.data = self.session.query(T_Info)
+
+        # if self.data is None:
+        #     self.__set_data4db()
+
+    def init_voyager(self):
+        self.index = Index(Space.Cosine, num_dimensions=self.vec_size)
+
+        if self.voy_name is not None and os.path.isfile(self.voy_name):
+            self.index = self.index.load(self.voy_name)
+
+        return
 
     def __set_data4db(self):
-        sql = f"""
-        select %s from data;
-        """ % (",".join(["data."+c for c in ["pk"]+self.save_columns+["vector"]]),)
+        info = self.session.query(T_Info).all()
+        vector = self.session.query(T_Vector).all()
+        j_info_vector = self.session.query(J_InfoVector).all()
 
-        tmp = pd.DataFrame(self.db.execute(sql).fetchall(), columns=["pk"]+self.save_columns+["vector"])
-        if 0 < tmp.shape[0]:
-            self.data = tmp
+        if 0 < len(info):
+            self.info = pd.DataFrame([o.get_list() for o in info], columns=info[0].get_column())
+            self.vector = pd.DataFrame([v.get_list() for v in vector], columns=vector[0].get_column())
+            self.j_info_vector = pd.DataFrame([j.get_list() for j in j_info_vector], columns=j_info_vector[0].get_column())
+
+            self.data = pd.merge(self.info, self.vector[["pk", "vector"]], on="pk", how="left")
+
+        # sql = f"""
+        # select %s from data;
+        # """ % (",".join(["data."+c for c in ["pk"]+self.save_columns+["vector"]]),)
+        #
+        # tmp = pd.DataFrame(self.db.execute(sql).fetchall(), columns=["pk"]+self.save_columns+["vector"])
+        # if 0 < tmp.shape[0]:
+        #     self.data = tmp
         return
 
     def __serialize(self, vector: List[float]) -> bytes:
-        return np.asarray(vector).astype(np.float32).tobytes()
+        return np.asarray(vector).astype(np.float32)#.tobytes()
 
     def insert_data(self, row):
         with self.db:
@@ -116,30 +155,90 @@ class VectorSearchBase:
         if append:
             pass
         elif self.data is not None:
-            self.reset_db()
-            self.init_db()
+            self.Base.metadata.create_all(self.engine)
+            # self.reset_db()
+            # self.init_db()
 
         prefix = self.config.get('query_prefix', '')
 
-        data["label"] = [prefix+t for t in data["target"].tolist()]
-        data["pk"] = data["label"]
+        data["pk"] = [prefix+t for t in data["target"].tolist()]
+        # data["pk"] = data["label"]
 
-        if "vector" not in data.columns:
-            data["vector"] = self.__trans_vec_main(data["label"].to_list(), sp=sp, verbose=True)
-            print("add vector")
 
+        # if "vector" not in data.columns:
+        #     data["vector"] = self.__trans_vec_main(data["label"].to_list(), sp=sp, verbose=True)
+        #     print("add vector")
+
+        vec_target = data[~data.duplicated(subset='pk')]
+
+        vec_target["vector"] = self.__trans_vec_main(vec_target["pk"].to_list(), sp=sp, verbose=True)
+        # vectors32 = np.stack(vec_target["vector"].to_numpy()).astype(np.float32)
+
+        # add info
         for c in self.save_columns:
             if c not in data.columns:
                 data[c] = None
 
-        if append and self.data is not None:
-            self.data = pd.concat([self.data, data[["pk"]+self.save_columns+["vector"]]]).drop_duplicates(subset='pk')
-        else:
-            self.data = data[["pk"]+self.save_columns+["vector"]]
+        dat = []
+        for i,d in data.iterrows():
+            add = T_Info(
+                target = d["target"],
+                pk = d["pk"],
+                option1 = d["option1"],
+                option2 = d["option2"],
+                option3 = d["option3"],
+                option4 = d["option4"],
+                option5 = d["option5"],
+            )
+            dat.append(add)
 
-        for i, row in data.iterrows():
-            self.insert_data(row)
+        self.session.add_all(dat)
+        self.session.commit()
 
+        # add vector
+        dat = []
+        for i,d in vec_target.iterrows():
+            add = T_Vector(
+                target = d["target"],
+                pk = d["pk"],
+                vector = d["vector"],
+            )
+            dat.append(add)
+
+        self.session.add_all(dat)
+        self.session.commit()
+
+        # add vector to voyager
+        if 0 < vec_target.shape[0]:
+            vectors32 = np.stack(vec_target["vector"].to_numpy()).astype(np.float32)
+
+            ids = self.index.add_items(vectors32)
+
+            if self.voy_name is not None:
+                self.index.save(self.voy_name)
+
+            # add j
+            dat =[]
+            for pk, id in zip(vec_target["pk"].tolist(), ids):
+                add = J_InfoVector(
+                    pk=pk,
+                    vector_id=id,
+                )
+                dat.append(add)
+
+            self.session.add_all(dat)
+            self.session.commit()
+
+
+        # if append and self.data is not None:
+        #     self.data = pd.concat([self.data, data[["pk"]+self.save_columns+["vector"]]]).drop_duplicates(subset='pk')
+        # else:
+        #     self.data = data[["pk"]+self.save_columns+["vector"]]
+
+
+        # for i, row in data.iterrows():
+        #     self.insert_data(row)
+        #
         self.__set_data4db()
 
         return
@@ -203,30 +302,58 @@ class VectorSearchBase:
         return ret
 
     def __search_similar_embeddings(self, query_embedding, k=5):
-        results = self.db.execute(f'''
-        SELECT data.id,{",".join(["data."+c for c in self.save_columns])}, vss.distance
-        FROM vss
-        JOIN data ON vss.rowid = data.id
-        WHERE vss_search(vss.vector, vss_search_params(?, ?))
-        ORDER BY vss.distance
-        LIMIT ?
-    ''', (self.__serialize(query_embedding), k, k))
-        return results.fetchall()
+        q = self.__serialize(query_embedding)
+
+        neighbors, distances = self.index.query(self.__serialize(query_embedding), k=k)
+
+    #     results = self.db.execute(f'''
+    #     SELECT data.id,{",".join(["data."+c for c in self.save_columns])}, vss.distance
+    #     FROM vss
+    #     JOIN data ON vss.rowid = data.id
+    #     WHERE vss_search(vss.vector, vss_search_params(?, ?))
+    #     ORDER BY vss.distance
+    #     LIMIT ?
+    # ''', (self.__serialize(query_embedding), k, k))
+
+        return neighbors, distances
 
     def __q(self, q):
         embeddings = self.__trans_vec_main([q], sp=10)
         return embeddings[0]
 
     def query(self, query, k=5):
-        if self.data is None or self.data.shape[0] == 0:
-            return
+        if self.info is None or (self.info.shape[0] == 0):
+            return pd.DataFrame([])
 
         qry = self.__q(query)
-        return self.__search_similar_embeddings(qry, k=k)
+        neighbors, distances = self.__search_similar_embeddings(qry, k=k)
+        result = pd.DataFrame({
+            "vector_id": neighbors,
+            "distance": distances,
+        })
+        return result
 
     def query_with_info(self, query, k=5):
         result = self.query(query, k=k)
-        return pd.DataFrame(result, columns=["id"]+self.save_columns+["distance"]).dropna(how='all', axis=1)
+
+        if result is None or (result.shape[0] == 0):
+            return pd.DataFrame([])
+
+        tmp = pd.merge(
+            result,
+            self.j_info_vector,
+            on="vector_id",
+            how="left",
+        )
+        result = pd.merge(
+            tmp,
+            self.info,
+            on="pk",
+            how="left",
+        ).dropna(how='all', axis=1)
+
+        return result
+        # return pd.DataFrame(result, columns=["id"]+self.save_columns+["distance"]).dropna(how='all', axis=1)
 
     def MLP_Classifier(self, y_label, skip_build=False, hidden_layer_sizes=(100,)):
         if self.data is None:
