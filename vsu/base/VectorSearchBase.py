@@ -158,7 +158,8 @@ class VectorSearchBase:
             self.Base.metadata.drop_all(self.engine)
             self.Base.metadata.create_all(self.engine)
             if self.voy_name is not None and os.path.isfile(self.voy_name):
-                os.remove(self.voy_name)
+                # os.remove(self.voy_name)
+                self.init_voyager()
 
             # self.reset_db()
             # self.init_db()
