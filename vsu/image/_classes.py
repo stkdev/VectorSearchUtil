@@ -8,8 +8,8 @@ from vsu.base.VectorSearchBase import VectorSearchBase
 
 
 class VSU_Image_CLIP(VectorSearchBase):
-    def __init__(self, save_name=None):
-        super(VSU_Image_CLIP, self).__init__(save_name)
+    def __init__(self, save_name=None, echo=False):
+        super(VSU_Image_CLIP, self).__init__(save_name, echo=echo)
 
     # override
     def init_model(self):
