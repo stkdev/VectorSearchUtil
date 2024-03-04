@@ -27,7 +27,7 @@ import os
 
 class VectorSearchBase:
 
-    def __init__(self, save_name=None):
+    def __init__(self, save_name=None, echo=False):
 
         self.data = None
         self.info = None
@@ -42,7 +42,7 @@ class VectorSearchBase:
         self.db_name = '' if save_name is None else f'/{save_name}.db'
         self.voy_name = None if save_name is None else f'{save_name}.voy'
 
-        self.engine = create_engine(f'sqlite://{self.db_name}', echo=True)
+        self.engine = create_engine(f'sqlite://{self.db_name}', echo=echo)
         self.session = Session(self.engine)
 
         self.index = None
