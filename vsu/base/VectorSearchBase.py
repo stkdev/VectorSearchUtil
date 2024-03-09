@@ -32,7 +32,8 @@ class VectorSearchBase:
         self.data = None
         self.info = None
         self.vector = None
-        self.save_columns = ["target", "option1", "option2", "option3", "option4","option5"]
+        # self.save_columns = ["target", "option1", "option2", "option3", "option4","option5"]
+        self.save_columns = ["target"] + ["option"+str(i) for i in range(1, 6)]
 
         self.zeroshot_labels = None
         self.zeroshot_vec = None
@@ -355,10 +356,20 @@ class VectorSearchBase:
             self.info,
             on="pk",
             how="left",
-        ).dropna(how='all', axis=1)
+        )
 
-        return result
+        return result[["id_x", "vector_id", "pk"]+self.save_columns+["distance"]].dropna(how='all', axis=1)
         # return pd.DataFrame(result, columns=["id"]+self.save_columns+["distance"]).dropna(how='all', axis=1)
+
+    def zeroshot_search(self, query, k=5):
+        self.set_zeroshot_labels([query, "Other"])
+        self.do_zeroshot()
+
+        # self.data["zeroshot_pred"] = pred
+        # self.data["zeroshot_one_score"] = [float(s[0]) for s in scores]
+
+        return self.data.sort_values("zeroshot_one_score", ascending=False).head(k)
+
 
     def MLP_Classifier(self, y_label, skip_build=False, hidden_layer_sizes=(100,)):
         if self.data is None:

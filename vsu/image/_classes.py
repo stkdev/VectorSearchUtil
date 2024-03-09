@@ -33,6 +33,7 @@ class VSU_Image_CLIP(VectorSearchBase):
             pred.append(self.zeroshot_labels[idx])
 
         self.data["zeroshot_pred"] = pred
+        self.data["zeroshot_one_score"] = [float(s[0]) for s in scores]
         return scores, pred
 
     # override
