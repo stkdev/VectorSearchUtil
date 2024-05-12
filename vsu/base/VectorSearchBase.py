@@ -19,6 +19,7 @@ from vsu.base.Entity import T_Info, T_Vector, J_InfoVector
 
 from voyager import Index, Space
 
+from dotenv import load_dotenv
 import os
 
 # sqlite3.register_adapter(list, lambda l: ';'.join([str(i) for i in l]))
@@ -28,6 +29,9 @@ import os
 class VectorSearchBase:
 
     def __init__(self, save_name=None, echo=False):
+
+        load_dotenv()
+        self.hf_token = os.getenv('HF_ACCESS_TOKEN')
 
         self.data = None
         self.info = None
@@ -148,13 +152,28 @@ class VectorSearchBase:
         self.data = None
 
     def set_data(self, data, append=False, sp=10):
+        import time
+        def make_pk(data):
+            prefix = self.config.get('query_prefix', '')
+            return [prefix+t for t in data["target"].tolist()]
+
         data = data.copy()
+        data["pk"] = make_pk(data)
+        # data["pk"] = data["label"]
 
         if 'target' not in data.columns:
             return
 
-        if append:
-            pass
+        if append and (self.info is not None):
+            check = self.info[["pk"]].copy()
+            check["ck"] = 1
+
+            data = pd.merge(data, check, on="pk", how="left")
+            data = data.query('ck != 1').drop('ck', axis=1)
+
+            if data.shape[0] == 0:
+                return
+
         elif self.data is not None:
             self.Base.metadata.drop_all(self.engine)
             self.Base.metadata.create_all(self.engine)
@@ -164,12 +183,6 @@ class VectorSearchBase:
 
             # self.reset_db()
             # self.init_db()
-
-        prefix = self.config.get('query_prefix', '')
-
-        data["pk"] = [prefix+t for t in data["target"].tolist()]
-        # data["pk"] = data["label"]
-
 
         # if "vector" not in data.columns:
         #     data["vector"] = self.__trans_vec_main(data["label"].to_list(), sp=sp, verbose=True)
@@ -215,6 +228,8 @@ class VectorSearchBase:
         self.session.commit()
 
         # add vector to voyager
+        start = time.time()
+
         if 0 < vec_target.shape[0]:
             vectors32 = np.stack(vec_target["vector"].to_numpy()).astype(np.float32)
 
@@ -235,6 +250,8 @@ class VectorSearchBase:
             self.session.add_all(dat)
             self.session.commit()
 
+        end = time.time()
+        print("index作成：",end - start)
 
         # if append and self.data is not None:
         #     self.data = pd.concat([self.data, data[["pk"]+self.save_columns+["vector"]]]).drop_duplicates(subset='pk')
@@ -367,8 +384,10 @@ class VectorSearchBase:
 
         # self.data["zeroshot_pred"] = pred
         # self.data["zeroshot_one_score"] = [float(s[0]) for s in scores]
+        # output = self.data[self.data['zeroshot_one_score'] > 0.95]
+        output = self.data.sort_values("zeroshot_one_score", ascending=False).head(k)
 
-        return self.data.sort_values("zeroshot_one_score", ascending=False).head(k)
+        return output
 
 
     def MLP_Classifier(self, y_label, skip_build=False, hidden_layer_sizes=(100,)):
