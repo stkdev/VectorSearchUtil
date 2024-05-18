@@ -31,10 +31,11 @@ class VSU_Image_CLIP(VectorSearchBase):
         if self.zeroshot_vec is None:
             return
 
-        image_features = torch.tensor(self.data["vector"])
-        text_features = torch.tensor(self.zeroshot_vec)
+        with torch.no_grad(), torch.cuda.amp.autocast():
+            image_features = torch.tensor(self.data["vector"])
+            text_features = torch.tensor(self.zeroshot_vec)
 
-        scores = (100.0 * image_features @ text_features.T).softmax(dim=-1)
+            scores = (100.0 * image_features @ text_features.T).softmax(dim=-1)
 
         pred = []
         for s in scores:
@@ -51,18 +52,19 @@ class VSU_Image_CLIP(VectorSearchBase):
 
         df_scores = None
 
-        for d in zeroshot_dict:
-            arr = zeroshot_dict[d]
-            image_features = torch.tensor(self.data["vector"])
-            text_features = torch.tensor(self._trans_vec_sub_func(arr))
+        with torch.no_grad(), torch.cuda.amp.autocast():
+            for d in zeroshot_dict:
+                arr = zeroshot_dict[d]
+                image_features = torch.tensor(self.data["vector"])
+                text_features = torch.tensor(self._trans_vec_sub_func(arr))
 
-            scores = (100.0 * image_features @ text_features.T).softmax(dim=-1)
-            scores = pd.DataFrame(scores, columns=[f"{d}_{ar}" for ar in arr])
+                scores = (100.0 * image_features @ text_features.T).softmax(dim=-1)
+                scores = pd.DataFrame(scores, columns=[f"{d}_{ar}" for ar in arr])
 
-            if df_scores is None:
-                df_scores = scores
-            else:
-                df_scores = pd.concat([df_scores, scores], axis=1)
+                if df_scores is None:
+                    df_scores = scores
+                else:
+                    df_scores = pd.concat([df_scores, scores], axis=1)
 
         return df_scores
 
@@ -155,10 +157,11 @@ class VSU_Image_JP_CLIP(VectorSearchBase):
         if self.zeroshot_vec is None:
             return
 
-        image_features = torch.tensor(self.data["vector"])
-        text_features = torch.tensor(self.zeroshot_vec)
+        with torch.no_grad(), torch.cuda.amp.autocast():
+            image_features = torch.tensor(self.data["vector"])
+            text_features = torch.tensor(self.zeroshot_vec)
 
-        scores = (100.0 * image_features @ text_features.T).softmax(dim=-1)
+            scores = (100.0 * image_features @ text_features.T).softmax(dim=-1)
 
         pred = []
         for s in scores:

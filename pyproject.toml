@@ -6,7 +6,6 @@ license = {file = "LICENSE"}
 
 dependencies = [
     "transformers==4.36.2",
-    "sqlite-vss==0.1.2",
     "voyager==2.0.2",
     "open_clip_torch==2.23.0",
     "SQLAlchemy==2.0.27",
