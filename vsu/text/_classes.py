@@ -9,15 +9,15 @@ from vsu.base.VectorSearchBase import VectorSearchBase
 
 
 class VSU_Text_E5(VectorSearchBase):
-    def __init__(self, save_name=None, echo=False):
-        super(VSU_Text_E5, self).__init__(save_name, echo=echo)
+    def __init__(self, save_name=None, echo=False, **kwargs):
+        super(VSU_Text_E5, self).__init__(save_name, echo=echo, **kwargs)
 
     # override
-    def init_model(self):
+    def init_model(self, **kwargs):
         model_name = 'intfloat/multilingual-e5-small'
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModel.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, **kwargs)
+        self.model = AutoModel.from_pretrained(model_name, **kwargs)
 
         self.vec_size = self.model.embeddings.word_embeddings.embedding_dim
 

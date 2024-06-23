@@ -28,7 +28,7 @@ import os
 
 class VectorSearchBase:
 
-    def __init__(self, save_name=None, echo=False):
+    def __init__(self, save_name=None, echo=False, **kwargs):
 
         load_dotenv()
         self.hf_token = os.getenv('HF_ACCESS_TOKEN')
@@ -70,7 +70,7 @@ class VectorSearchBase:
         return
 
     # override
-    def init_model(self):
+    def init_model(self, **kwargs):
         self.tokenizer = None
         self.model = None
         self.preprocess = None

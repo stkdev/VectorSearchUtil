@@ -17,13 +17,13 @@ class VSU_Image_CLIP(VectorSearchBase):
     """
     https://github.com/mlfoundations/open_clip
     """
-    def __init__(self, save_name=None, echo=False):
-        super(VSU_Image_CLIP, self).__init__(save_name, echo=echo)
+    def __init__(self, save_name=None, echo=False, **kwargs):
+        super(VSU_Image_CLIP, self).__init__(save_name, echo=echo, **kwargs)
 
     # override
-    def init_model(self):
-        self.tokenizer = open_clip.get_tokenizer('ViT-B-32')
-        self.model, _, self.preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained='laion2b_s34b_b79k')
+    def init_model(self, **kwargs):
+        self.tokenizer = open_clip.get_tokenizer('ViT-B-32', **kwargs)
+        self.model, _, self.preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained='laion2b_s34b_b79k', **kwargs)
         self.vec_size = self.model.token_embedding.embedding_dim
 
     # override
@@ -195,13 +195,13 @@ class VSU_Image_JP_CLIP(VectorSearchBase):
 
 
 class VSU_Image_EfficientNet(VectorSearchBase):
-    def __init__(self, save_name=None, echo=False):
-        super(VSU_Image_EfficientNet, self).__init__(save_name, echo=echo)
+    def __init__(self, save_name=None, echo=False, **kwargs):
+        super(VSU_Image_EfficientNet, self).__init__(save_name, echo=echo, **kwargs)
 
     # override
-    def init_model(self):
-        self.image_processor = AutoImageProcessor.from_pretrained("google/efficientnet-b0")
-        self.model = EfficientNetModel.from_pretrained("google/efficientnet-b0")
+    def init_model(self, **kwargs):
+        self.image_processor = AutoImageProcessor.from_pretrained("google/efficientnet-b0", **kwargs)
+        self.model = EfficientNetModel.from_pretrained("google/efficientnet-b0", **kwargs)
         self.vec_size = self.model.config.hidden_dim
 
     # override
