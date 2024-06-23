@@ -22,6 +22,9 @@ from voyager import Index, Space
 from dotenv import load_dotenv
 import os
 
+import base64
+from io import BytesIO
+
 # sqlite3.register_adapter(list, lambda l: ';'.join([str(i) for i in l]))
 # sqlite3.register_converter('List', lambda s: [float(item) for item in s.split(bytes(b';'))])
 
@@ -153,6 +156,19 @@ class VectorSearchBase:
 
     def set_data(self, data, append=False, sp=10):
         import time
+
+        def __PIL_to_bytes(self, img, size_max=100):
+            # 大きすぎる場合リサイズ
+            if (2*size_max) < sum(img.size):
+                sp = 1 + (max(img.size) // size_max)
+                img = img.resize((img.width // sp, img.height // sp))
+
+            buffered = BytesIO()
+            img.save(buffered, format="PNG")
+            data = base64.b64encode(buffered.getvalue())
+
+            return data
+
         def make_pk(data):
             prefix = self.config.get('query_prefix', '')
             return [prefix+t if type(t)==str else t for t in data["target"].tolist()]
@@ -201,8 +217,8 @@ class VectorSearchBase:
         dat = []
         for i,d in data.iterrows():
             add = T_Info(
-                target = d["target"],
-                pk = d["pk"],
+                target = [t if type(t)==str else __PIL_to_bytes(t) for t in d["target"].tolist()],
+                pk = [t if type(t)==str else __PIL_to_bytes(t) for t in d["pk"].tolist()],
                 option1 = d["option1"],
                 option2 = d["option2"],
                 option3 = d["option3"],
