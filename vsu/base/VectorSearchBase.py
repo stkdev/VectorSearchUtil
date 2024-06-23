@@ -155,7 +155,7 @@ class VectorSearchBase:
         import time
         def make_pk(data):
             prefix = self.config.get('query_prefix', '')
-            return [prefix+t for t in data["target"].tolist()]
+            return [prefix+t if type(t)==str else t for t in data["target"].tolist()]
 
         data = data.copy()
         data["pk"] = make_pk(data)
