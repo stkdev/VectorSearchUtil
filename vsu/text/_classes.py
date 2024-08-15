@@ -1,6 +1,7 @@
 import torch.nn.functional as F
 from torch import Tensor
 from transformers import AutoTokenizer, AutoModel
+import torch
 
 import pandas as pd
 import numpy as np
@@ -42,6 +43,28 @@ class VSU_Text_E5(VectorSearchBase):
 
         self.data["zeroshot_pred"] = pred
         return scores, pred
+
+    def do_zeroshot_detail(self, zeroshot_dict):
+        if zeroshot_dict is None:
+            return
+
+        df_scores = None
+
+        with torch.no_grad(), torch.cuda.amp.autocast():
+            for d in zeroshot_dict:
+                arr = zeroshot_dict[d]
+                image_features = torch.tensor(self.data["vector"])
+                text_features = torch.tensor(self._trans_vec_sub_func(arr))
+
+                scores = (100.0 * image_features @ text_features.T).softmax(dim=-1)
+                scores = pd.DataFrame(scores, columns=[f"{d}_{ar}" for ar in arr])
+
+                if df_scores is None:
+                    df_scores = scores
+                else:
+                    df_scores = pd.concat([df_scores, scores], axis=1)
+
+        return df_scores
 
     # override
     def _trans_vec_main_func(self, ar):

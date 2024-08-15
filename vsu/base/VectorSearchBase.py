@@ -112,9 +112,9 @@ class VectorSearchBase:
         j_info_vector = self.session.query(J_InfoVector).all()
 
         if 0 < len(info):
-            self.info = pd.DataFrame([o.get_list() for o in info], columns=info[0].get_column())
-            self.vector = pd.DataFrame([v.get_list() for v in vector], columns=vector[0].get_column())
-            self.j_info_vector = pd.DataFrame([j.get_list() for j in j_info_vector], columns=j_info_vector[0].get_column())
+            self.info = pd.DataFrame([o.get_list() for o in info], columns=T_Info.get_column())
+            self.vector = pd.DataFrame([v.get_list() for v in vector], columns=T_Vector.get_column())
+            self.j_info_vector = pd.DataFrame([j.get_list() for j in j_info_vector], columns=J_InfoVector.get_column())
 
             self.data = pd.merge(self.info, self.vector[["pk", "vector"]], on="pk", how="left")
 
